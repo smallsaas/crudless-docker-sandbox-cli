@@ -1,0 +1,8 @@
+#!/bin/sh
+#############################################################
+export TARGET_PORT='22'
+export TARGET_SSH='root@192.168.3.236'
+export REMOTE_WEB_PATH='/home/sandboxs/sandbox_cinema'
+export DOCKER_NAME='cinema-dist'
+#############################################################
+deploy-web
