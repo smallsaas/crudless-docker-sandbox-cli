@@ -1,0 +1,14 @@
+{
+    "name": "crudless-docker-sandbox-cli",
+    "version": "0.0.1",
+    "main": "crudless-docker-sandbox-cli",
+    "repository": "dev",
+    "author": "smallsaas.cn",
+    "dependencies": {
+        "commander": "^2.16.0",
+        "handlebars": "^4.0.11"
+    },
+    "bin": {
+        "deploy-web": "./deploy-web.sh"
+    }
+}

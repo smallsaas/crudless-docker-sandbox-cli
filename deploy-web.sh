@@ -1,42 +1,47 @@
-package=$1
-ssh=$2
-name=$3
+#############################################################
+#export TARGET_PORT='6000'
+#export TARGET_SSH='root@115.231.158.31'
+#export REMOTE_WEB_PATH='/home/sandboxs/sandbox_cinema/dist'
+#export DOCKER_NAME='dist'
+#############################################################
 rollback=dist.rollback_$(date "+%m-%d")
+workdir=$(cd $(dirname $0); pwd)
 
-## confirm the number of parameters
-if [[ $# -ne 3 ]];then
+## confirm arameters
+if [[ $# -ne 3 ]] && [[ ! $DOCKER_NAME || ! $REMOTE_WEB_PATH || ! $TARGET_SSH ]];then
   echo ''
-  echo 'e.g. sh deploy-web.sh dist root@192.168.3.123 cinema'
+  echo 'Get the environment variables in the script file by default.'
+  echo ''
+  echo 'Usage:'
+  echo 'sh deploy-web.sh <ssh> <remoteDistPath> <dockerName>'
+  echo 'e.g. sh deploy-web.sh root@192.168.3.123 cinema'
   echo ''
   exit
 fi
 
-## ready for the path
-echo "=>ssh $ssh \"mkdir -p ~/$name/web\""
-ssh $ssh "if [ ! -d ~/$name/web ];then mkdir -p  ~/$name/web; elif [ -d ~/$name/web/dist ];then rm -rf ~/$name/web/dist; fi"
-
-## cp dist to ssh
-if [[ $package == dist ]];then
-  ## package dist directory
-  echo "=>tar zcvf dist.tar.gz dist"
-  tar zcvf dist.tar.gz dist
-  ## transfer archive file
-  echo "=>scp dist.tar.gz $ssh:~/$name/web"
-  scp dist.tar.gz $ssh:~/$name/web
-  ## clean local storage
-  rm dist.tar.gz
-  ## clean remote storage and upzip archive 
-  ## avoid multiple authentication ##
-  echo "=>ssh $ssh \"cd ~/$name/web && cp -r dist $rollback && bash ./predeploy.sh rollback keep dist.rollback_ 6  && tar zxvf dist.tar.gz && rm dist.tar.gz\""
-  ssh $ssh "cd ~/$name/web 
-  && cp -r dist $rollback 
-  && bash ./predeploy.sh rollback keep dist.rollback_ 6 
-  && tar zxvf dist.tar.gz
-  && rm dist.tar.gz
-  && docker-compose restart $name-web"
-else
-  ## package name illegal
-  echo $package directory illegal
+if [ ! -d $workdir/dist ];then
+  echo Dist not found in $workdir.
+  exit
+elif [[ $# -eq 3 ]];then
+  TARGET_SSH=$1
+  REMOTE_WEB_PATH=$2
+  DOCKER_NAME=$3
 fi
-
+## package dist directory
+echo "=>tar zcvf dist.tar.gz $workdir/dist"
+tar -zcvf dist.tar.gz $workdir/dist
+## transfer archive file
+echo "=>scp dist.tar.gz $TARGET_SSH:$REMOTE_WEB_PATH"
+if [ $TARGET_PORT ];then
+  TARGET_PORT="-P $TARGET_PORT"
+fi
+scp $TARGET_PORT dist.tar.gz $TARGET_SSH:$REMOTE_WEB_PATH
+## clean local storage
+rm dist.tar.gz
+if [[ $TARGET_PORT ]];then
+  TARGET_PORT=${TARGET_PORT/-P/-p}
+fi
+## clean remote storage and upzip archive 
+## avoid multiple authentication ##
+ssh $TARGET_PORT $TARGET_SSH "cd $REMOTE_WEB_PATH && tar zcf $rollback dist && bash ./predeploy.sh rollback keep dist.rollback_ 6 && tar zxf dist.tar.gz -C dist && rm dist.tar.gz && docker-compose restart $DOCKER_NAME"
 exit
