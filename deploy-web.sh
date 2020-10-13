@@ -20,8 +20,8 @@ if [[ $# -ne 3 ]] && [[ ! $DOCKER_NAME || ! $REMOTE_WEB_PATH || ! $TARGET_SSH ]]
   exit
 fi
 
-if [ ! -d $workdir/dist ];then
-  echo Dist not found in $workdir.
+if [ ! -d dist ];then
+  echo Dist not found in $(pwd).
   exit
 elif [[ $# -eq 3 ]];then
   TARGET_SSH=$1
@@ -29,8 +29,8 @@ elif [[ $# -eq 3 ]];then
   DOCKER_NAME=$3
 fi
 ## package dist directory
-echo "=>tar zcvf dist.tar.gz $workdir/dist"
-tar -zcvf dist.tar.gz $workdir/dist
+echo "=>tar zcvf dist.tar.gz dist"
+tar -zcvf dist.tar.gz dist
 ## transfer archive file
 echo "=>scp dist.tar.gz $TARGET_SSH:$REMOTE_WEB_PATH"
 if [ $TARGET_PORT ];then
