@@ -1,3 +1,4 @@
+#!/bin/sh
 #############################################################
 #export TARGET_PORT='6000'
 #export TARGET_SSH='root@115.231.158.31'
@@ -43,5 +44,5 @@ if [[ $TARGET_PORT ]];then
 fi
 ## clean remote storage and upzip archive 
 ## avoid multiple authentication ##
-ssh $TARGET_PORT $TARGET_SSH "cd $REMOTE_WEB_PATH && tar zcf $rollback dist && bash ./predeploy.sh rollback keep dist.rollback_ 6 && tar zxf dist.tar.gz -C dist && rm dist.tar.gz && docker-compose restart $DOCKER_NAME"
+ssh $TARGET_PORT $TARGET_SSH "cd $REMOTE_WEB_PATH && if [ -f ./predeploy.sh ];then tar zcf $rollback dist && bash ./predeploy.sh rollback keep dist.rollback_ 6 fi && tar zxf dist.tar.gz -C dist && rm dist.tar.gz && docker-compose restart $DOCKER_NAME"
 exit
