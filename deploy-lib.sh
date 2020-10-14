@@ -50,15 +50,22 @@ elif [[ $# -eq 4 ]]; then
 fi
 
 ## if jar not found then get lib jar from maven storage
-if [[ ! -f $JAR ]]; then
+if [[ $JAR != '.' ]] && [[ ! -f $JAR ]]; then
     get_lib_by_maven "$@"
-else
-    if [ -d $inf_dir ]; then
-        rm -rf $inf_dir
+elif [[ $JAR == '.' ]]; then
+    num=$(ls -l | grep "[^-standalone].jar" | wc -l)
+    if [ $num -ne 1 ]; then
+        JAR=$(ls . | grep "[^-standalone].jar" | head -n 1)
+    else   
+        echo 'No or multiple jar files.'
+        exit
     fi
-    mkdir -p $inf_dir
-    cp $JAR $inf_dir
 fi
+if [ -d $inf_dir ]; then
+    rm -rf $inf_dir
+fi
+mkdir -p $inf_dir
+cp $JAR $inf_dir
 ## add option in TARGET_PORT
 if [ $TARGET_PORT ];then
   TARGET_PORT="-P $TARGET_PORT"
