@@ -7,6 +7,7 @@
         "commander": "^2.16.0"
     },
     "bin": {
-        "deploy-web": "./deploy-web.sh"
+        "deploy-web": "./deploy-web.sh",
+        "deploy-lib": "./deploy-lib.sh"
     }
 }
