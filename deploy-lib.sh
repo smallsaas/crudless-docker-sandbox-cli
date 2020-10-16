@@ -8,7 +8,7 @@ export DOCKER_NAME='cinema-api'
 JAR=$1
 rollback=app.rollback_$(date "+%m-%d")
 BOOT_INF=BOOT-INF
-inf_dir=$BOOT-INF/lib
+inf_dir=$BOOT_INF/lib
 
 usage() {
     echo ''
