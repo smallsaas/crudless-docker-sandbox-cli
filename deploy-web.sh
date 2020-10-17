@@ -10,18 +10,18 @@ rollback=dist.rollback_$(date "+%m-%d")
 ## current work directory
 workdir=$(cd $(dirname $0); pwd)
 ## REMOTE SSH core command
-command='
-cd $REMOTE_WEB_PATH;
+command="
+cd ${REMOTE_WEB_PATH};
 if [ -d dist ];then
+	tar zcf ${rollback} dist;
 	rm -rf dist;
-	tar zcf $rollback dist;
 fi
 if [ -f predeploy.sh ];then
 	sh ./predeploy.sh rollback keep dist.rollback_ 6;
 fi
 tar zxf dist.tar.gz;
 rm dist.tar.gz;
-docker restart $DOCKER_NAME;'
+docker restart ${DOCKER_NAME};"
 
 ## confirm arameters
 if [[ $# -ne 3 ]] && [[ ! $DOCKER_NAME || ! $REMOTE_WEB_PATH || ! $TARGET_SSH ]];then

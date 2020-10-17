@@ -14,21 +14,21 @@ rollback=app.rollback_$(date "+%m-%d")
 BOOT_INF=BOOT-INF
 inf_dir=$BOOT_INF/lib
 ## REMOTE SSH core command
-command='
-cd $REMOTE_API_PATH;
-if [ -d $JAR_STANDALONE ];then
-	cp $JAR_STANDALONE $rollback;
+command="
+cd ${REMOTE_API_PATH};
+if [ -d ${JAR_STANDALONE} ];then
+	cp ${JAR_STANDALONE} ${rollback};
 else
-	echo $JAR_STANDALONE NOT found
-	rm -rf $inf_dir;
+	echo ${JAR_STANDALONE} NOT found
+	rm -rf ${inf_dir};
 	exit
 fi
 if [ -f predeploy.sh ];then
-	sh ./predeploy.sh rollback keep dist.rollback_ 6;
+	sh ./predeploy.sh rollback keep app.rollback_ 6;
 fi
-docker exec $DOCKER_NAME jar 0uf $JAR_STANDALONE $inf_dir/$JAR;
-rm -rf $inf_dir;
-docker restart $DOCKER_NAME;'
+docker exec ${DOCKER_NAME} jar 0uf ${JAR_STANDALONE} ${inf_dir}/${JAR};
+rm -rf ${inf_dir};
+docker restart ${DOCKER_NAME};"
 
 usage() {
     echo ''
