@@ -4,11 +4,31 @@ export TARGET_PORT='6000'
 export TARGET_SSH='root@115.231.158.31'
 export REMOTE_API_PATH='/home/sandboxs/sandbox_cinema/api'
 export DOCKER_NAME='cinema-api'
+export JAR_STANDALONE='app.jar'
 #############################################################
+## JAR file path
 JAR=$1
+## rollback rename format
 rollback=app.rollback_$(date "+%m-%d")
+## BOOT-INF directory
 BOOT_INF=BOOT-INF
 inf_dir=$BOOT_INF/lib
+## REMOTE SSH core command
+command='
+cd $REMOTE_API_PATH;
+if [ -d $JAR_STANDALONE ];then
+	cp $JAR_STANDALONE $rollback;
+else
+	echo $JAR_STANDALONE NOT found
+	rm -rf $inf_dir;
+	exit
+fi
+if [ -f predeploy.sh ];then
+	sh ./predeploy.sh rollback keep dist.rollback_ 6;
+fi
+docker exec $DOCKER_NAME jar 0uf $JAR_STANDALONE $inf_dir/$JAR;
+rm -rf $inf_dir;
+docker restart $DOCKER_NAME;'
 
 usage() {
     echo ''
@@ -79,5 +99,5 @@ if [[ $TARGET_PORT ]];then
   TARGET_PORT=${TARGET_PORT/-P/-p}
 fi
 ## deploy-lib core
-ssh $TARGET_PORT $TARGET_SSH "cd $REMOTE_API_PATH && cp app.jar $rollback && sh ./predeploy.sh rollback keep app.rollback_ 6 && docker exec $DOCKER_NAME jar 0uf app.jar $inf_dir/$JAR && rm -rf $inf_dir && docker restart $DOCKER_NAME"
+ssh $TARGET_PORT $TARGET_SSH "$command"
 exit

@@ -1,12 +1,27 @@
 #!/bin/sh
 #############################################################
-#export TARGET_PORT='6000'
-#export TARGET_SSH='root@115.231.158.31'
-#export REMOTE_WEB_PATH='/home/sandboxs/sandbox_cinema/dist'
-#export DOCKER_NAME='dist'
+export TARGET_PORT='6000'
+export TARGET_SSH='root@115.231.158.31'
+export REMOTE_WEB_PATH='/home/sandboxs/sandbox_cinema/dist'
+export DOCKER_NAME='cinema-dist'
 #############################################################
+## rollback rename format
 rollback=dist.rollback_$(date "+%m-%d")
+## current work directory
 workdir=$(cd $(dirname $0); pwd)
+## REMOTE SSH core command
+command='
+cd $REMOTE_WEB_PATH;
+if [ -d dist ];then
+	rm -rf dist;
+	tar zcf $rollback dist;
+fi
+if [ -f predeploy.sh ];then
+	sh ./predeploy.sh rollback keep dist.rollback_ 6;
+fi
+tar zxf dist.tar.gz;
+rm dist.tar.gz;
+docker restart $DOCKER_NAME;'
 
 ## confirm arameters
 if [[ $# -ne 3 ]] && [[ ! $DOCKER_NAME || ! $REMOTE_WEB_PATH || ! $TARGET_SSH ]];then
@@ -44,5 +59,5 @@ if [[ $TARGET_PORT ]];then
 fi
 ## clean remote storage and upzip archive 
 ## avoid multiple authentication ##
-ssh $TARGET_PORT $TARGET_SSH "cd $REMOTE_WEB_PATH && tar zcf $rollback dist && sh ./predeploy.sh rollback keep dist.rollback_ 6 && tar zxf dist.tar.gz && rm dist.tar.gz && docker restart $DOCKER_NAME"
+ssh $TARGET_PORT $TARGET_SSH "$command"
 exit
