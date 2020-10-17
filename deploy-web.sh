@@ -9,22 +9,8 @@ export DOCKER_NAME='cinema-dist'
 rollback=dist.rollback_$(date "+%m-%d")
 ## current work directory
 workdir=$(cd $(dirname $0); pwd)
-## REMOTE SSH core command
-command="
-cd ${REMOTE_WEB_PATH};
-if [ -d dist ];then
-	tar zcf ${rollback} dist;
-	rm -rf dist;
-fi
-if [ -f predeploy.sh ];then
-	sh ./predeploy.sh rollback keep dist.rollback_ 6;
-fi
-tar zxf dist.tar.gz;
-rm dist.tar.gz;
-docker restart ${DOCKER_NAME};"
 
-## confirm arameters
-if [[ $# -ne 3 ]] && [[ ! $DOCKER_NAME || ! $REMOTE_WEB_PATH || ! $TARGET_SSH ]];then
+uasge() {
   echo ''
   echo 'Get the environment variables in the script file by default.'
   echo ''
@@ -33,31 +19,57 @@ if [[ $# -ne 3 ]] && [[ ! $DOCKER_NAME || ! $REMOTE_WEB_PATH || ! $TARGET_SSH ]]
   echo 'e.g. sh deploy-web.sh root@192.168.3.123 /home/sandboxs/sandbox_cinema/dist cinema-dist'
   echo ''
   exit
-fi
+}
 
-if [ ! -d dist ];then
-  echo Dist not found in $(pwd).
+check() {
+  ## confirm arameters
+  if [[ $# -ne 3 ]] && [[ ! $DOCKER_NAME || ! $REMOTE_WEB_PATH || ! $TARGET_SSH ]];then
+    uasge
+  fi
+
+  if [ ! -d dist ];then
+    echo Dist not found in $(pwd).
+    exit
+  elif [[ $# -eq 3 ]];then
+    TARGET_SSH=$1
+    REMOTE_WEB_PATH=$2
+    DOCKER_NAME=$3
+  fi
+}
+
+execute() {
+  ## REMOTE SSH core command
+  command="
+  cd ${REMOTE_WEB_PATH};
+  if [ -d dist ];then
+    tar zcf ${rollback} dist;
+    rm -rf dist;
+  fi
+  if [ -f predeploy.sh ];then
+    sh ./predeploy.sh rollback keep dist.rollback_ 6;
+  fi
+  tar zxf dist.tar.gz;
+  rm dist.tar.gz;
+  docker restart ${DOCKER_NAME};"
+  ## package dist directory
+  echo "=>tar zcvf dist.tar.gz dist"
+  tar -zcvf dist.tar.gz dist
+  ## transfer archive file
+  echo "=>scp dist.tar.gz $TARGET_SSH:$REMOTE_WEB_PATH"
+  if [ $TARGET_PORT ];then
+    TARGET_PORT="-P $TARGET_PORT"
+  fi
+  scp $TARGET_PORT dist.tar.gz $TARGET_SSH:$REMOTE_WEB_PATH
+  ## clean local storage
+  rm dist.tar.gz
+  if [[ $TARGET_PORT ]];then
+    TARGET_PORT=${TARGET_PORT/-P/-p}
+  fi
+  ## clean remote storage and upzip archive 
+  ## avoid multiple authentication ##
+  ssh $TARGET_PORT $TARGET_SSH "$command"
   exit
-elif [[ $# -eq 3 ]];then
-  TARGET_SSH=$1
-  REMOTE_WEB_PATH=$2
-  DOCKER_NAME=$3
-fi
-## package dist directory
-echo "=>tar zcvf dist.tar.gz dist"
-tar -zcvf dist.tar.gz dist
-## transfer archive file
-echo "=>scp dist.tar.gz $TARGET_SSH:$REMOTE_WEB_PATH"
-if [ $TARGET_PORT ];then
-  TARGET_PORT="-P $TARGET_PORT"
-fi
-scp $TARGET_PORT dist.tar.gz $TARGET_SSH:$REMOTE_WEB_PATH
-## clean local storage
-rm dist.tar.gz
-if [[ $TARGET_PORT ]];then
-  TARGET_PORT=${TARGET_PORT/-P/-p}
-fi
-## clean remote storage and upzip archive 
-## avoid multiple authentication ##
-ssh $TARGET_PORT $TARGET_SSH "$command"
-exit
+}
+
+check
+execute
