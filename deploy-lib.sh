@@ -103,6 +103,11 @@ if [[ $JAR != '.' ]] && [[ ! -f $JAR ]]; then
     result=$(ls | grep -E 'app|*-standalone'.jar | head -1)
     if [ $result ];then
         jarFile=$(jar tf $result | grep $JAR | head -1)
+        if [ ! $jarFile ];then
+            echo $result not exist target file: $JAR
+            echo Do you want to use fuzzy search like \" gmic-oms to gmic-oms-1.0.0.jar \" \?
+            exit
+        fi
         jar xf $result $jarFile
         JAR=${jarFile##*/}
         execute
