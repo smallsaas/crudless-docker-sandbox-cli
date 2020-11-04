@@ -56,6 +56,7 @@ get_lib_in_local_dir() {
   if [ -d target ];then
      dirs=". target"
   fi
+
   libs=$(ls $dirs | grep -E "[^-standalone|^app].jar")
   i=0
   for lib in $libs;do
@@ -63,12 +64,18 @@ get_lib_in_local_dir() {
      i=$(($i+1))
   done
 
-  ## 
-  if [ $i!=1 ]; then
+  if [ ! -f $JAR ];then 
+     JAR=target/$JAR
+  fi
+
+  ##
+  if [ $i != 1 ]; then
      JAR=()
      #echo 'No or multiple jar files.' > /dev/stderr
      #exit
   fi
+
+  echo $JAR
 }
 
 get_lib_in_local_standalone() {
