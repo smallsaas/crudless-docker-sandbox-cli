@@ -39,9 +39,9 @@ execute() {
        TARGET_PORT="-P $TARGET_PORT"
     fi
     ## transfer jar file
-    echo "=>scp $jar $TARGET_SSH:$TARGET_PATH"
+    echo "=>scp $jar $TARGET_SSH:$TARGET_PATH/lib"
     if [ ! ${DEBUG} ];then
-       scp $TARGET_PORT $jar $TARGET_SSH:$TARGET_PATH
+       scp $TARGET_PORT $jar $TARGET_SSH:$TARGET_PATH/lib
     fi
     
     ## deploy-lib core
