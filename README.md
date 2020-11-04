@@ -1,43 +1,43 @@
-## crudless-docker-sandbox-cli
+# crudless-docker-sandbox-cli
 
->Some tiny script tools in cli maner
+> Scripts used to deploy lib or dist at local side
 
-### install
+## install
 
 ```shell
 $ npm i -g 
-
-## or below two lines after clone
-
-$ npm install
-$ npm link
 ```
 
 ### deploy-web
-
 > Used to deploy local dist to remote server
 
+##### prepare the script for your simple use
 ```shell
-$ bash deploy-web.sh
-
-Get the environment variables in the script file by default.
-
-Usage:
-sh deploy-web.sh <ssh> <remoteDistPath> <dockerName>
-e.g. sh deploy-web.sh root@192.168.3.123 cinema
+$ cat deploy-web-sandbox.sh
+#!/bin/sh
+#############################################################
+#export TARGET_PORT='22'  #default to 22
+export TARGET_SSH='root@192.168.3.100'
+export TARGET_PATH='/home/sandboxs/sandbox_cinema/web'
+export DOCKER_NAME='cinema-web'
+#############################################################
+deploy-web
 ```
 
 ### deploy-lib
+> Used to deploy local lib jar to remote server
 
->User to deploy lib file from local stroage or remote maven to server
+##### prepare the script for your simple use
 
 ```shell
-$ bash deploy-lib.sh
-
-Get the environment variables in the script file by default.
-
-Usage:
-sh deploy-lib.sh <jar> <ssh> <remoteApiPath> <dockerName>
-e.g. sh deploy-web.sh crud-plus root@192.168.3.123 /home/sandboxs/sandbox_cinema/api cinema-api
+$ cat deploy-lib-sandbox.sh
+#!/bin/sh
+#############################################################
+#export TARGET_PORT='22'  #default to 22
+export TARGET_SSH='root@192.168.3.100'
+export TARGET_PATH='/home/sandboxs/sandbox_cinema/api'
+export DOCKER_NAME='cinema-api'
+#############################################################
+deploy-lib
 ```
 

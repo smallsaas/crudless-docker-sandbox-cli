@@ -1,74 +1,92 @@
 #!/bin/sh
 #############################################################
-export TARGET_PORT='6000'
-export TARGET_SSH='root@115.231.158.31'
-export REMOTE_API_PATH='/home/sandboxs/sandbox_cinema/api'
-export DOCKER_NAME='cinema-api'
-export JAR_STANDALONE='app.jar'
+##export DEBUG='anythingyouwant'
+##export TARGET_PORT='22'
+#export TARGET_SSH='root@192.168.3.236'
+#export TARGET_PATH='/home/sandboxs/sandbox_cinema/api'
+#export DOCKER_NAME='cinema-api'
 #############################################################
 ## JAR file path
 JAR=$1
-## rollback rename format
-rollback=app.rollback_$(date "+%m-%d")
-## BOOT-INF directory
-BOOT_INF=BOOT-INF
-inf_dir=$BOOT_INF/lib
+if [ ! $JAR ];then 
+  JAR='.'  # means get local jar
+fi
 
 usage() {
     echo ''
-    echo 'Get the environment variables in the script file by default.'
+    echo 'Edit the script file with exporting below environment variables.'
+    echo  export TARGET_SSH='root@192.168.3.236'
+    echo  export TARGET_PATH='/home/sandboxs/sandbox_cinema/api'
+    echo  export DOCKER_NAME='cinema-api'
     echo ''
     echo 'Usage:'
     echo 'sh deploy-lib.sh <jar> <ssh> <remoteApiPath> <dockerName>'
-    echo 'e.g. sh deploy-web.sh crud-plus root@192.168.3.123 /home/sandboxs/sandbox_cinema/api cinema-api'
+    echo 'e.g. sh deploy-web.sh . root@192.168.3.123 /home/sandboxs/sandbox_cinema/api cinema-api'
     echo ''
     exit
 }
 
 execute() {
+    jar=$1
+
     ## REMOTE SSH core command
     command="
-    cd ${REMOTE_API_PATH};
-    if [ -f ${JAR_STANDALONE} ];then
-        cp ${JAR_STANDALONE} ${rollback};
-    else
-        echo ${JAR_STANDALONE} NOT found
-        rm -rf ${BOOT_INF};
-        exit
-    fi
-    if [ -f predeploy.sh ];then
-        sh ./predeploy.sh rollback keep app.rollback_ 6;
-    fi
-    docker exec ${DOCKER_NAME} jar 0uf ${JAR_STANDALONE} ${inf_dir}/${JAR};
-    rm -rf ${BOOT_INF};
-    docker restart ${DOCKER_NAME};"
+    cd ${TARGET_PATH};
+    sh docker-deploy-lib.sh"
 
     ## add option in TARGET_PORT
     if [ $TARGET_PORT ];then
-    TARGET_PORT="-P $TARGET_PORT"
+       TARGET_PORT="-P $TARGET_PORT"
     fi
     ## transfer jar file
-    echo "=>scp $inf_dir $TARGET_SSH:$REMOTE_API_PATH"
-    scp $TARGET_PORT -r $BOOT_INF $TARGET_SSH:$REMOTE_API_PATH
-    ## clean local storage
-    rm -rf $BOOT_INF
-    if [[ $TARGET_PORT ]];then
-    TARGET_PORT=${TARGET_PORT/-P/-p}
+    echo "=>scp $jar $TARGET_SSH:$TARGET_PATH"
+    if [ ! ${DEBUG} ];then
+       scp $TARGET_PORT $jar $TARGET_SSH:$TARGET_PATH
     fi
+    
     ## deploy-lib core
-    ssh $TARGET_PORT $TARGET_SSH "$command"
-    exit
+    echo =>ssh $TARGET_PORT $TARGET_SSH "$command"
+    if [ ! ${DEBUG} ];then
+       ssh $TARGET_PORT $TARGET_SSH "$command"
+    fi
 }
 
-prepareDir() {
-    if [ -d $inf_dir ]; then
-        rm -rf $inf_dir
+get_lib_in_local_dir() {
+  dirs='.'
+  if [ -d target ];then
+     dirs=". target"
+  fi
+  libs=$(ls $dirs | grep -E "[^-standalone|^app].jar")
+  i=0
+  for lib in $libs;do
+     JAR=$lib
+     i=$(($i+1))
+  done
+
+  ## 
+  if [ $i!=1 ]; then
+     JAR=()
+     #echo 'No or multiple jar files.' > /dev/stderr
+     #exit
+  fi
+}
+
+get_lib_in_local_standalone() {
+    standalone=$1
+    jarFile=$(jar tf $standalone | grep $JAR | head -1)
+    if [ ! $jarFile ];then
+        echo $standalone not exist target file: $JAR
+        exit
     fi
-    mkdir -p $inf_dir
-    cp $JAR $inf_dir
+    jar xf $standalone $jarFile
+    JAR=${jarFile##*/}
 }
 
 get_lib_by_maven() {
+    ## BOOT-INF directory
+    BOOT_INF=BOOT-INF
+    inf_dir=$BOOT_INF/lib
+
     num=$(echo $JAR | awk -F":" '{print NF-1}')
     if [ $JAR ]; then
         if [ $num -eq 0 ]; then
@@ -87,41 +105,41 @@ get_lib_by_maven() {
     JAR=$(ls $inf_dir | head -n 1)
 }
 
-## confirm arameters
-if [[ $# -ne 4 ]] && [[ ! $DOCKER_NAME || ! $REMOTE_API_PATH || ! $TARGET_SSH ]]; then
-    usage
-elif [ ! $JAR ];then
+
+#  main
+## confirm parameters
+if [[ $# -ne 4 ]] && [[ ! $DOCKER_NAME || ! $TARGET_PATH || ! $TARGET_SSH ]];then
     usage
 elif [[ $# -eq 4 ]]; then
     TARGET_SSH=$2
-    REMOTE_API_PATH=$3
+    TARGET_PATH=$3
     DOCKER_NAME=$4
 fi
 
-## if jar not found then get lib jar from maven storage
-if [[ $JAR != '.' ]] && [[ ! -f $JAR ]]; then
-    result=$(ls | grep -E 'app|*-standalone'.jar | head -1)
-    if [ $result ];then
-        jarFile=$(jar tf $result | grep $JAR | head -1)
-        if [ ! $jarFile ];then
-            echo $result not exist target file: $JAR
-            echo Do you want to use fuzzy search like \" gmic-oms to gmic-oms-1.0.0.jar \" \?
-            exit
-        fi
-        jar xf $result $jarFile
-        JAR=${jarFile##*/}
-        execute
-    else
-        get_lib_by_maven "$@"
+## get jar: if jar not found then get lib jar from maven storage
+if [[ $JAR == '.' ]]; then
+   get_lib_in_local_dir
+elif [ ! -f $JAR ]; then
+    dirs='.'
+    if [ -d target ];then
+      dirs=". target"
     fi
-elif [[ $JAR == '.' ]]; then
-    num=$(ls | grep -E "[^-standalone|^app].jar" | wc -l)
-    if [ $num -ne 1 ]; then
-        JAR=$(ls | grep -E "[^-standalone|^app].jar" | head -n 1)
-    else   
-        echo 'No or multiple jar files.'
-        exit
+
+    standalone=$(ls $dirs | grep -E 'app|*-standalone'.jar | head -1)
+    if [ -f $standalone ];then
+      get_lib_in_local_standalone $standalone
+    else
+       get_lib_by_maven "$@"
     fi
 fi
-prepareDir
-execute
+
+## execute
+if [ ! $JAR ];then
+   echo no deploy lib ! >/dev/stderr
+   exit
+fi
+if [ ! -f $JAR ];then
+   echo $JAR not exists ! >/dev/stderr
+   exit
+fi
+execute $JAR

@@ -2,8 +2,8 @@
 #############################################################
 #export DEBUG='anythingyouwant'
 #export TARGET_PORT='22'  #default to 22
-export TARGET_SSH='root@192.168.3.100'
-export TARGET_PATH='/home/sandboxs/sandbox_cinema/web'
-export DOCKER_NAME='cinema-web'
+export TARGET_SSH='root@192.168.3.236'
+export TARGET_PATH='/home/sandboxs/sandbox_cinema/api'
+export DOCKER_NAME='cinema-api'
 #############################################################
-deploy-web
+deploy-lib
