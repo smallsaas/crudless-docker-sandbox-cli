@@ -13,7 +13,7 @@ $ npm i -g
 
 ##### prepare the script for your simple use
 ```shell
-$ cat deploy-web-sandbox.sh
+$ cat deployless-web.sh
 #!/bin/sh
 #############################################################
 #export TARGET_PORT='22'  #default to 22
@@ -30,7 +30,7 @@ deploy-web
 ##### prepare the script for your simple use
 
 ```shell
-$ cat deploy-lib-sandbox.sh
+$ cat deployless-lib.sh
 #!/bin/sh
 #############################################################
 #export TARGET_PORT='22'  #default to 22
@@ -40,4 +40,3 @@ export DOCKER_NAME='cinema-api'
 #############################################################
 deploy-lib
 ```
-
