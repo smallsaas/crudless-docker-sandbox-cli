@@ -1,4 +1,4 @@
-# crudless-docker-sandbox-cli
+# deployless-cli
 
 > Scripts used to deploy lib or dist at local side
 
